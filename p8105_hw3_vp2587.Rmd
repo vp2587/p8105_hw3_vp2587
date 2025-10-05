@@ -5,7 +5,7 @@ date: "2025-10-05"
 output: github_document
 ---
 ## Problem 1
-```{r}
+```{r setup, include = FALSE}
 library(tidyverse)
 library(p8105.datasets)
 data("instacart")
@@ -13,7 +13,54 @@ data("instacart")
 The goal is to do some exploration of this dataset. To that end, write a short description of the dataset, noting the size and structure of the data, describing some key variables, and giving illustrative examples of observations. Then, do or answer the following (commenting on the results of each):
 
 1. How many aisles are there, and which aisles are the most items ordered from?
-There are 
+```{r most_items}
+instacart %>% 
+  count(aisle, name = "n_obs") %>%
+  arrange(desc(n_obs)) %>% 
+  head()
+```
+
+There are `r instacart %>% summarise(n_aisles = n_distinct(aisle))` different aisles. The `fresh vegetables` and `fresh fruits` are by far the most popular aisles, followed by `packaged vegetables fruits`, `yogurt`, and `packaged cheese`.
+
 2. Make a plot that shows the number of items ordered in each aisle, limiting this to aisles with more than 10000 items ordered. Arrange aisles sensibly, and organize your plot so others can read it.
+```{r}
+instacart %>%
+  count(aisle, name = "n_obs") %>%
+  filter(n_obs > 10000) %>%
+  mutate(aisle = forcats::fct_reorder(aisle, n_obs)) %>%
+  ggplot(aes(x = aisle, y = n_obs, color = aisle)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Aisles With Over 10000 Items Ordered",
+    x = "Aisle Names",
+    y = "Number of of Items Ordered"
+  ) +
+  viridis::scale_color_viridis(discrete = TRUE) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
 3. Make a table showing the three most popular items in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”. Include the number of times each item is ordered in your table.
+```{r}
+instacart %>%
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>% 
+  group_by(aisle, product_name) %>% 
+  summarize(order_count = n()) %>%
+  arrange(aisle, desc(order_count)) %>%
+  slice_max(order_count, n = 3)
+```
+
 4. Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).
+```{r}
+instacart %>%
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
+  group_by(product_name, order_dow) %>% 
+  summarize(mean_hour = mean(order_hour_of_day)) %>% 
+  pivot_wider(
+    names_from = order_dow,
+    values_from = mean_hour,
+    names_prefix = "Day_"
+  )
+```
+
