@@ -162,7 +162,7 @@ rent_p =
   viridis::scale_color_viridis(discrete = TRUE) +
   theme_minimal(base_size = 12) +
   theme(legend.position = "none") +
-  facet_wrap(. ~ borough, ncol = 3)
+  facet_wrap(. ~ borough, ncol = 1)
 rent_p
 ```
 
@@ -199,8 +199,8 @@ This plot depicts the distribution of the average ZIP-code-level monthly rent ac
 5. Combine the two previous plots into a single graphic, and export this to a results folder in your repository.
 
 ```{r combined}
-monthly_avg_2023_p / rent_p
-ggsave("combined.pdf")           
+monthly_avg_2023_p + rent_p
+ggsave("combined.pdf", height = 8, width = 12)           
 ```
 
 
