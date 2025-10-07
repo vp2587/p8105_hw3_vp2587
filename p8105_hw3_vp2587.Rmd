@@ -162,7 +162,7 @@ rent_p =
   viridis::scale_color_viridis(discrete = TRUE) +
   theme_minimal(base_size = 12) +
   theme(legend.position = "none") +
-  facet_wrap(. ~ borough, ncol = 3)
+  facet_wrap(~ borough, ncol = 3)
 rent_p
 ```
 
@@ -221,7 +221,7 @@ demographic_df =
     sex = factor(sex, levels = c("Male","Female")),
     education = factor(
       education,
-      levels = c("Less than high school","High school equivalent","More than high School"),
+      levels = c("Less than high school","High school equivalent","More than high school"),
       ordered = TRUE
   )
   ) %>% 
@@ -236,19 +236,77 @@ nhanes_df =
 ```
 
 2) Produce a reader-friendly table for the number of men and women in each education category, and create a visualization of the age distributions for men and women in each education category. Comment on these items.
-```{r}
+```{r age_count}
+nhanes_df %>% 
+  count(education, sex) %>% 
+  pivot_wider(
+    names_from = sex,
+    values_from = n
+  ) %>% 
+  knitr::kable(caption = "Number of Males and Females in Each Education Category")
 
+nhanes_df %>% 
+  ggplot(aes(x = age, color = sex, fill = sex)) +
+  geom_histogram(position = "dodge", binwidth = 5) +
+  labs(
+    title = "Number of Males and Females in Each Education Category",
+    x = "Sex",
+    y = "Count"
+  ) +
+  viridis::scale_fill_viridis(discrete = TRUE) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  facet_grid(sex ~ education)
 ```
 
 3) Traditional analyses of accelerometer data focus on the total activity over the day. Using your tidied dataset, aggregate across minutes to create a total activity variable for each participant. Plot these total activities (y-axis) against age (x-axis); your plot should compare men to women and have separate panels for each education level. Include a trend line or a smooth to illustrate differences. Comment on your plot.
-```{r}
-
+```{r mims_age}
+nhanes_df %>% 
+  mutate(
+    total_mims = rowSums(across(starts_with("min")), na.rm = TRUE)) %>%
+  select(-starts_with("min")) %>% 
+  ggplot(aes(x = age, y = total_mims, color = sex)) +
+  labs(
+    title = "Total Daily Activity vs Age",
+    x = "Age",
+    y = "Total MIMS",
+    color = "Sex"
+  ) +
+  geom_point() +
+  geom_smooth(se = FALSE) + 
+  viridis::scale_color_viridis(discrete = TRUE) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  facet_wrap(~ education)
 ```
 
 4) Accelerometer data allows the inspection activity over the course of the day. Make a three-panel plot that shows the 24-hour activity time courses for each education level and use color to indicate sex. Describe in words any patterns or conclusions you can make based on this graph; including smooth trends may help identify differences.
-```{r}
-
+```{r mims_24_hour}
+nhanes_df %>% 
+  pivot_longer(
+    cols = starts_with("min"),
+    names_to = "minute",
+    values_to = "mims") %>% 
+  mutate(minute = row_number(), .by = seqn) %>% 
+  group_by(education, sex, minute) %>% 
+  summarize(
+    mean_mims = mean(mims, na.rm = TRUE), .groups = "drop"
+  ) %>% 
+  ggplot(aes(x = minute, y = mean_mims, color = sex)) +
+  scale_x_continuous(
+    breaks = c(0, 360, 720, 1080, 1440),
+    labels = c("00:00", "06:00", "12:00", "18:00", "24:00")
+  ) +
+  labs(
+    title = "24-Hour Activity Profiles by Education Level",
+    x = "Minute",
+    y = "Mean Activity (MIMS)"
+  ) +
+  geom_line(linewidth = 0.1) +
+  geom_smooth(se = FALSE, linewidth = 0.5) +
+  viridis::scale_color_viridis(discrete = TRUE) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        panel.spacing = unit(20, "pt")) +
+  facet_wrap(~ education)
 ```
-
-
-
